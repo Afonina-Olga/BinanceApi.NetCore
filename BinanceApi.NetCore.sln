@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinanceApi.NetCore.Tests", "BinanceApi.NetCore.Tests\BinanceApi.NetCore.Tests.csproj", "{6ED66D6F-195C-46D0-8DB8-138DF2370066}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI", "UI", "{86957A7D-B18C-4C0E-9238-1B8E7FC731A1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinanceApi.NetCore", "BinanceApi.NetCore\BinanceApi.NetCore.csproj", "{BA2450D1-76DD-41AC-B659-122E6BCD417E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinanceApi.NetCore.Terminal", "BinanceApi.NetCore.Terminal\BinanceApi.NetCore.Terminal.csproj", "{5F822A43-78EA-458E-BDDC-6E2AACA71552}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinanceApi.NetCore.DependencyInjection", "BinanceApi.NetCore.DependencyInjection\BinanceApi.NetCore.DependencyInjection.csproj", "{7100FC9F-C2D4-408E-B0CB-E5D0CD070ABA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinanceApi.NetCore.Domain", "BinanceApi.NetCore.Domain\BinanceApi.NetCore.Domain.csproj", "{D9035D0D-76D9-47BE-B659-2833E9921D17}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6ED66D6F-195C-46D0-8DB8-138DF2370066}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ED66D6F-195C-46D0-8DB8-138DF2370066}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6ED66D6F-195C-46D0-8DB8-138DF2370066}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6ED66D6F-195C-46D0-8DB8-138DF2370066}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA2450D1-76DD-41AC-B659-122E6BCD417E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA2450D1-76DD-41AC-B659-122E6BCD417E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA2450D1-76DD-41AC-B659-122E6BCD417E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA2450D1-76DD-41AC-B659-122E6BCD417E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F822A43-78EA-458E-BDDC-6E2AACA71552}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F822A43-78EA-458E-BDDC-6E2AACA71552}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F822A43-78EA-458E-BDDC-6E2AACA71552}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F822A43-78EA-458E-BDDC-6E2AACA71552}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7100FC9F-C2D4-408E-B0CB-E5D0CD070ABA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7100FC9F-C2D4-408E-B0CB-E5D0CD070ABA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7100FC9F-C2D4-408E-B0CB-E5D0CD070ABA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7100FC9F-C2D4-408E-B0CB-E5D0CD070ABA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9035D0D-76D9-47BE-B659-2833E9921D17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9035D0D-76D9-47BE-B659-2833E9921D17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9035D0D-76D9-47BE-B659-2833E9921D17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9035D0D-76D9-47BE-B659-2833E9921D17}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5F822A43-78EA-458E-BDDC-6E2AACA71552} = {86957A7D-B18C-4C0E-9238-1B8E7FC731A1}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B59DE33-DEA2-41E6-A86C-8EB626E7EF0A}
+	EndGlobalSection
+EndGlobal
