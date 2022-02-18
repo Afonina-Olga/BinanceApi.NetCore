@@ -1,4 +1,6 @@
-﻿namespace BinanceApi.NetCore.Builders
+﻿using BinanceApi.NetCore.Domain.Response;
+
+namespace BinanceApi.NetCore.Builders
 {
 	public interface INewOrderMarketTypeRequestBuilder : INewOrderTypeBaseRequestBuilder
 	{
@@ -6,12 +8,22 @@
 		/// Set quoteOrderQty param
 		/// </summary>
 		/// <param name="quoteOrderQty">Specifies the amount the user wants to spend (when buying) or receive (when selling) of the quote asset</param>
-		void SetQuoteOrderQty(decimal quoteOrderQty);
+		INewOrderMarketTypeRequestBuilder SetQuoteOrderQty(decimal quoteOrderQty);
 
 		/// <summary>
 		/// Set icebergQty parameter
 		/// </summary>
 		/// <param name="icebergQty"></param>
-		void SetIcebergQty(decimal icebergQty);
+		INewOrderMarketTypeRequestBuilder SetIcebergQty(decimal icebergQty);
+
+		/// <summary>
+		/// Execute post request
+		/// </summary>
+		INewOrderMarketTypeRequestBuilder ExecuteAsync<TResponse>() where TResponse : NewOrderResponseAsk;
+
+		/// <summary>
+		/// Execute post request
+		/// </summary>
+		INewOrderMarketTypeRequestBuilder ExecuteAsync();
 	}
 }

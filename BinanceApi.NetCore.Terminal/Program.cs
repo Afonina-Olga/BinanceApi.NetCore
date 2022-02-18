@@ -59,9 +59,12 @@ namespace BinanceApi.NetCore.Terminal
 				.ForBuy()
 				.SetNewClientOrderId("")
 				.SetReciveWindow(6000)
-				.SetOrderType<MarketOrderType>();
+				.SetOrderType<MarketOrderType>()
+				.SetIcebergQty(10)
+				.SetQuantity(50)
+				.SetQuoteOrderQty(500)
+				.ExecuteAsync<NewOrderResponseAsk>();
 
-			// Using(x=> x.Endpoints.Trade)
 			await host.StopAsync();
 
 			Console.WriteLine("Завершено!");

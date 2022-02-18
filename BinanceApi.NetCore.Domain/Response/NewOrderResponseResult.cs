@@ -4,7 +4,7 @@ using System.Text;
 
 namespace BinanceApi.NetCore.Domain.Response
 {
-	public class NewOrderresponseResult
+	public class NewOrderresponseResult : NewOrderResponseAsk
 	{
 	}
 }

@@ -2,6 +2,7 @@
 
 using BinanceApi.NetCore.Builders;
 using BinanceApi.NetCore.Domain;
+using BinanceApi.NetCore.Domain.Response;
 
 namespace BinanceApi.NetCore
 {
@@ -22,15 +23,24 @@ namespace BinanceApi.NetCore
 			return this;
 		}
 
-		public void SetQuoteOrderQty(decimal quoteOrderQty)
+		public INewOrderMarketTypeRequestBuilder SetQuoteOrderQty(decimal quoteOrderQty)
 		{
 			_quoteOrderQty = Guard.Against.NegativeOrZero(quoteOrderQty, nameof(quoteOrderQty), "QuoteOrderQty must be grather than zero");
+			return this;
 		}
 
-		public void SetIcebergQty(decimal icebergQty)
+		public INewOrderMarketTypeRequestBuilder SetIcebergQty(decimal icebergQty)
 		{
 			_icebergQty = Guard.Against.NegativeOrZero(icebergQty, nameof(icebergQty), "IcebergQty must be grather than zero");
 			_timeInForce = TimeInForce.GTC;
+			return this;
+		}
+
+		public INewOrderMarketTypeRequestBuilder ExecuteAsync<TResponse>()
+			where TResponse : NewOrderResponseAsk
+		{
+			// Проверка если установлены оба значения qty 
+			throw new System.NotImplementedException();
 		}
 	}
 }

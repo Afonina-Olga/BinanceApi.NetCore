@@ -1,6 +1,6 @@
 ﻿namespace BinanceApi.NetCore.Domain.Response
 {
-	public class NewOrderResponseFull
+	public class NewOrderResponseFull : NewOrderResponseAsk
 	{
 		public string Symbol { get; set; }
 
