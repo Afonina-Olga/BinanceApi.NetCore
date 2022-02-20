@@ -8,6 +8,6 @@
 		/// <summary>
 		/// Set quantity
 		/// </summary>
-		INewOrderMarketTypeRequestBuilder SetQuantity(decimal quantity);
+		IExecutable WithQuantity(decimal quantity);
 	}
 }

@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinanceApi.NetCore.Terminal
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinanceApi.NetCore.DependencyInjection", "BinanceApi.NetCore.DependencyInjection\BinanceApi.NetCore.DependencyInjection.csproj", "{7100FC9F-C2D4-408E-B0CB-E5D0CD070ABA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinanceApi.NetCore.Domain", "BinanceApi.NetCore.Domain\BinanceApi.NetCore.Domain.csproj", "{D9035D0D-76D9-47BE-B659-2833E9921D17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinanceApi.NetCore.Domain", "BinanceApi.NetCore.Domain\BinanceApi.NetCore.Domain.csproj", "{D9035D0D-76D9-47BE-B659-2833E9921D17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

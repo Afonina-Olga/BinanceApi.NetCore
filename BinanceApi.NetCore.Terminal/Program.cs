@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
-using BinanceApi.NetCore.Domain.Response;
-using BinanceApi.NetCore.Endpoints;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using BinanceApi.NetCore.Domain.Response;
+using BinanceApi.NetCore.Endpoints;
+using BinanceApi.NetCore.Requests;
 
 namespace BinanceApi.NetCore.Terminal
 {
@@ -52,18 +54,24 @@ namespace BinanceApi.NetCore.Terminal
 			using var host = Hosting;
 			await host.StartAsync();
 
-			var result1 = new BinanceClient()
+			new BinanceClient()
 				.Using<Trade>()
 				.CreateNewOrder()
 				.WithSimbol("")
 				.ForBuy()
-				.SetNewClientOrderId("")
-				.SetReciveWindow(6000)
-				.SetOrderType<MarketOrderType>()
-				.SetIcebergQty(10)
-				.SetQuantity(50)
-				.SetQuoteOrderQty(500)
+				.AdvancedOptions(options =>
+				{
+					options.NewClientOrderId = "";
+					options.ReciveWindow = 5000;
+				})
+				.SetOrderType<NewOrderMarketRequest>()
 				.ExecuteAsync<NewOrderResponseAsk>();
+
+			// AdditionalParameters только после ввода основных
+			//new BinanceClient()
+			//	.Using<Trade>()
+			//	.CreateNewOrder(1, 2, 3) // параметры вместо method chaining
+			//	.ExecuteAsync<NewOrderResponseFull>();
 
 			await host.StopAsync();
 

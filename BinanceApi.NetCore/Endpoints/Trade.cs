@@ -1,4 +1,5 @@
 ﻿using BinanceApi.NetCore.Builders;
+using BinanceApi.NetCore.Requests;
 
 namespace BinanceApi.NetCore.Endpoints
 {
@@ -30,6 +31,9 @@ namespace BinanceApi.NetCore.Endpoints
 		/// </summary>
 		/// <see href="https://binance-docs.github.io/apidocs/spot/en/#new-order-trade"/>
 		public INewOrderRequestBuilder CreateNewOrder() => new NewOrderRequest();
+
+		// Метод с параметрами?
+		//public IExecutable CreateNewOrder(string param1, int param2) => new NewOrderRequest();
 
 		/// <summary>
 		/// Cancel an active order.

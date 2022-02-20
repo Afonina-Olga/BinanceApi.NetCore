@@ -1,4 +1,8 @@
-﻿namespace BinanceApi.NetCore.Builders
+﻿using System;
+
+using BinanceApi.NetCore.Requests;
+
+namespace BinanceApi.NetCore.Builders
 {
 	public interface INewOrderRequestBuilder
 	{
@@ -23,15 +27,8 @@
 		TOrderType SetOrderType<TOrderType>() where TOrderType : INewOrderTypeBaseRequestBuilder, new();
 
 		/// <summary>
-		/// Set an unique id among open orders. Automatically generated if not sent.
+		/// Additional options for a request
 		/// </summary>
-		INewOrderRequestBuilder SetNewClientOrderId(string orderId);
-
-		/// <summary>
-		/// RecvWindow may be sent to specify the number of milliseconds after timestamp the request is valid for. 
-		/// If recvWindow is not sent, it defaults to 5000.
-		/// The value cannot be greater than 60000
-		/// </summary>
-		INewOrderRequestBuilder SetReciveWindow(long recvWindow);
+		INewOrderRequestBuilder AdvancedOptions(Action<NewOrderAdvancedOptions> config);
 	}
 }
