@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BinanceApi.NetCore\BinanceApi.NetCore.csproj" />
+    <ProjectReference Include="..\BinanceApi.NetCore.FluentApi\BinanceApi.NetCore.FluentApi.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,9 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using BinanceApi.NetCore.Domain.Response;
-using BinanceApi.NetCore.Endpoints;
-using BinanceApi.NetCore.Requests;
+using BinanceApi.NetCore.FluentApi.Endpoints;
+using BinanceApi.NetCore.FluentApi;
 
 namespace BinanceApi.NetCore.Terminal
 {
@@ -41,7 +40,7 @@ namespace BinanceApi.NetCore.Terminal
 			//});
 
 			services
-				.AddHttpClient<BinanceHttpClientProvider>()
+				.AddHttpClient<BinanceRequestExecutor>()
 				.ConfigureHttpClient((serviceProvider, httpClient) =>
 				{
 					httpClient.BaseAddress = new Uri("https://api.binance.com");
@@ -55,17 +54,18 @@ namespace BinanceApi.NetCore.Terminal
 			await host.StartAsync();
 
 			new BinanceClient()
-				.Using<Trade>()
+				.Endpoint<Trade>()
 				.CreateNewOrder()
-				.WithSimbol("")
+				.WithSimbol("BTCUSDT")
 				.ForBuy()
 				.AdvancedOptions(options =>
 				{
 					options.NewClientOrderId = "";
 					options.ReciveWindow = 5000;
 				})
-				.SetOrderType<NewOrderMarketRequest>()
-				.ExecuteAsync<NewOrderResponseAsk>();
+				.SetMarketOrderType()
+				.WithQuantity(20)
+				.ExecuteAsync(); // ExecuteAsync(NewOrderResponseType.FULL)
 
 			// AdditionalParameters только после ввода основных
 			//new BinanceClient()

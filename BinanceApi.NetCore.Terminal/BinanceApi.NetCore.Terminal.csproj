@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BinanceApi.NetCore.DependencyInjection\BinanceApi.NetCore.DependencyInjection.csproj" />
+    <ProjectReference Include="..\BinanceApi.NetCore.FluentApi\BinanceApi.NetCore.FluentApi.csproj" />
   </ItemGroup>
 
 </Project>

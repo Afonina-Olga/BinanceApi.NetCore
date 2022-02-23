@@ -10,6 +10,7 @@ using Ardalis.GuardClauses;
 using BinanceApi.NetCore;
 using BinanceApi.NetCore.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using BinanceApi.NetCore.FluentApi;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -25,12 +26,12 @@ namespace Microsoft.Extensions.DependencyInjection
 			var config = GetConfiguration(configuration);
 
 			services.TryAdd(new ServiceDescriptor(
-				typeof(IBinanceClient),
+				typeof(BinanceClient),
 				typeof(BinanceClient),
 				config.Lifetime));
 
 			services
-				.AddHttpClient<BinanceHttpClientProvider>()
+				.AddHttpClient<BinanceRequestExecutor>()
 				.ConfigureHttpClient((serviceProvider, httpClient) =>
 				{
 					httpClient.BaseAddress = new Uri("https://api.binance.com");
