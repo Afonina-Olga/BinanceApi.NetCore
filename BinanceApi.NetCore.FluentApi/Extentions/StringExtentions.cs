@@ -54,5 +54,10 @@ namespace BinanceApi.NetCore.FluentApi.Extentions
 					ex);
 			}
 		}
+
+		public static string ToMemoryCacheKey<T>(this string requestUrl) where T : class
+		{
+			return $"{typeof(T).FullName}-{requestUrl}";
+		}
 	}
 }

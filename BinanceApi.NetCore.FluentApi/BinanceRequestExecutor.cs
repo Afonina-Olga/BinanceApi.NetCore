@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
+using Microsoft.Extensions.Caching.Memory;
 
 using BinanceApi.NetCore.FluentApi.Exceptions;
 using BinanceApi.NetCore.FluentApi.Extentions;
@@ -19,6 +20,9 @@ namespace BinanceApi.NetCore.FluentApi
 		private string _secretKey;
 		private readonly long _timestampOffset = 1000;
 		private readonly long _receiveWindow = 5000;
+		private MemoryCache _memoryCache;
+		private readonly object _lockObject = new object();
+		private TimeSpan _defaultCacheTime = new TimeSpan(0, 30, 0);
 
 		#endregion
 
@@ -33,7 +37,7 @@ namespace BinanceApi.NetCore.FluentApi
 			get { return _apiKey; }
 			set
 			{
-				var key = Guard.Against.NullOrEmpty(value, "api key", "Api key is null or empty");
+				_apiKey = Guard.Against.NullOrEmpty(value, "api key", "Api key is null or empty");
 
 				if (_httpClient.DefaultRequestHeaders.Contains(ApiHeader))
 				{
@@ -45,18 +49,29 @@ namespace BinanceApi.NetCore.FluentApi
 						}
 					}
 				}
-				_httpClient.DefaultRequestHeaders.TryAddWithoutValidation(ApiHeader, new[] { key });
+				_httpClient.DefaultRequestHeaders.TryAddWithoutValidation(ApiHeader, new[] { _apiKey });
 			}
 		}
 
 		#endregion
+
+		public bool CacheEnabled { get; set; }
+
+		public TimeSpan? CacheTime { get; set; }
+
+		#region Ctor
 
 		public readonly HttpClient _httpClient;
 
 		public BinanceRequestExecutor(HttpClient httpClient)
 		{
 			_httpClient = httpClient;
+			_memoryCache = new MemoryCache(new MemoryCacheOptions());
 		}
+
+		#endregion
+
+		#region ExecuteRequest
 
 		/// <summary>
 		/// Execute generic request to the specific endpoint
@@ -70,9 +85,25 @@ namespace BinanceApi.NetCore.FluentApi
 			Uri requestUri,
 			HttpRequestType requestType,
 			Dictionary<string, string> parameters,
-			bool isSignedRequest = false)
+			bool isSignedRequest = false,
+			bool useCache = false)
 				where T : class
 		{
+			var memoryCacheKey = requestUri.AbsoluteUri.ToMemoryCacheKey<T>();
+
+			// CacheEnabled - all requests will use cach
+			// UseCache - use cache for specific requests (pass as parameter)
+			if (CacheEnabled || useCache)
+			{
+				if (ContainsInMemoryCache(memoryCacheKey))
+				{
+					var cachedItem = GetFromMemoryCache<T>(memoryCacheKey);
+
+					if (cachedItem != null)
+						return cachedItem;
+				}
+			}
+
 			var uri = ConfigureUri(requestUri, parameters, isSignedRequest);
 
 			var responseMessage = requestType switch
@@ -83,10 +114,15 @@ namespace BinanceApi.NetCore.FluentApi
 				HttpRequestType.PUT => await _httpClient.PutAsync(uri, null).ConfigureAwait(false),
 				_ => throw new ArgumentException("HttpRequestType is unknown")
 			};
-			
-			var responseResult = await HandleHttpResponse<T>(responseMessage, requestUri.ToString()).ConfigureAwait(false);
+
+			var responseResult = await
+				HandleHttpResponse<T>(responseMessage, requestUri.AbsoluteUri)
+				.ConfigureAwait(false);
+
 			return responseResult;
 		}
+
+		#endregion
 
 		#region Configure url
 
@@ -164,14 +200,13 @@ namespace BinanceApi.NetCore.FluentApi
 
 			if (responseMessage.IsSuccessStatusCode)
 			{
-				if (typeof(T) == typeof(string))
-				{
-					return (T)(object)messageJson;
-				}
-				else
-				{
-					return messageJson.DeserializeJson<T>(requestUrl, statusCode);
-				}
+				var messageObject = typeof(T) == typeof(string) ?
+					(T)(object)messageJson :
+					messageJson.DeserializeJson<T>(requestUrl, statusCode);
+
+				var memoryCacheKey = requestUrl.ToMemoryCacheKey<T>();
+				RemoveFromMemoryCache(memoryCacheKey);
+				AddInMemoryCache(messageObject, memoryCacheKey, CacheTime);
 			}
 
 			var error = messageJson.DeserializeJson<BinanceError>(requestUrl, statusCode);
@@ -186,6 +221,79 @@ namespace BinanceApi.NetCore.FluentApi
 				int code when code > 500 => new BinanceServerException(requestUrl, statusCode, error),
 				_ => new BinanceException(requestUrl, statusCode, error)
 			};
+		}
+
+		#endregion
+
+		#region Memory cache
+
+		/// <summary>
+		/// Remove an item from the cache
+		/// </summary>
+		/// <param name="key">The key to identify the item in the cache</param>
+		public void RemoveFromMemoryCache(string key)
+		{
+			if (!ContainsInMemoryCache(key)) return;
+
+			lock (_lockObject)
+			{
+				if (ContainsInMemoryCache(key))
+				{
+					_memoryCache.Remove(key.ToLower());
+				}
+			}
+		}
+
+		/// <summary>
+		/// Retrieve an item from the cache
+		/// </summary>
+		/// <typeparam name="T">The type of the item</typeparam>
+		/// <param name="key">The key to identify the cache item</param>
+		/// <returns>Item from the cache</returns>
+		public T GetFromMemoryCache<T>(string key) where T : class
+		{
+			var cachedItem = _memoryCache.Get(
+				Guard
+				.Against
+				.NullOrEmpty(key, nameof(key), "Memory cache key is null or empty")
+				.ToLower());
+			return cachedItem as T;
+		}
+
+		/// <summary>
+		/// Check if the cache contains an item
+		/// </summary>
+		/// <param name="key">The key to identify the cache entry</param>
+		/// <returns>If memory cache contains item</returns>
+		public bool ContainsInMemoryCache(string key)
+		{
+			if (!key.IsNullOrEmpty())
+				return _memoryCache.Get(key.ToLower()) != null;
+
+			return false;
+		}
+
+		/// <summary>
+		/// Add an item to the cache
+		/// </summary>
+		/// <typeparam name="T">Type of item to be added</typeparam>
+		/// <param name="iyem">The item to add</param>
+		/// <param name="key">The key to identify the cache item</param>
+		/// <param name="expiry">When the cache should expire</param>
+		public void AddInMemoryCache<T>(T item, string key, TimeSpan? expiry = null) where T : class
+		{
+			if (ContainsInMemoryCache(key)) return;
+
+			if (expiry == null)
+				expiry = _defaultCacheTime;
+
+			lock (_lockObject)
+			{
+				_memoryCache.Set(
+					key.ToLower(),
+					item,
+					new DateTimeOffset(DateTime.UtcNow.Add(expiry.Value)));
+			}
 		}
 
 		#endregion
