@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 
+using BinanceApi.NetCore.FluentApi.Exceptions;
 using BinanceApi.NetCore.FluentApi.Extentions;
 
 namespace BinanceApi.NetCore.FluentApi
@@ -29,10 +31,10 @@ namespace BinanceApi.NetCore.FluentApi
 		public string ApiKey
 		{
 			get { return _apiKey; }
-			set 
+			set
 			{
 				var key = Guard.Against.NullOrEmpty(value, "api key", "Api key is null or empty");
-				
+
 				if (_httpClient.DefaultRequestHeaders.Contains(ApiHeader))
 				{
 					lock (LockObject)
@@ -57,41 +59,33 @@ namespace BinanceApi.NetCore.FluentApi
 		}
 
 		/// <summary>
-		/// Execute get request to the specific endpoint
+		/// Execute generic request to the specific endpoint
 		/// </summary>
 		/// <param name="requestUri">Endpoint uri</param>
+		/// <param name="requestType">Http request type (GET, POST, PUT, DELETE)</param>
 		/// <param name="parameters">Request parameters</param>
 		/// <param name="isSignedRequest">Need signature for request?</param>
-		/// <returns>HttpResponseMessage</returns>
-		internal async Task<HttpResponseMessage> ExecuteGetRequest(Uri requestUri, Dictionary<string, string> parameters, bool isSignedRequest = false)
+		/// <returns>Deserialized object from json string</returns>
+		internal async Task<T> ExecuteRequest<T>(
+			Uri requestUri,
+			HttpRequestType requestType,
+			Dictionary<string, string> parameters,
+			bool isSignedRequest = false)
+				where T : class
 		{
 			var uri = ConfigureUri(requestUri, parameters, isSignedRequest);
-			return await _httpClient.GetAsync(uri).ConfigureAwait(false);
-		}
 
-		/// <summary>
-		/// Execute post request to the specific endpoint
-		/// </summary>
-		/// <param name="requestUri">Endpoint uri</param>
-		/// <param name="parameters">Request parameters</param>
-		/// <param name="isSignedRequest">Need signature for request?</param>
-		/// <returns>HttpResponseMessage</returns>
-		internal async Task<HttpResponseMessage> ExecutePostRequest(Uri requestUri, Dictionary<string, string> parameters, bool isSignedRequest = false)
-		{
-			var uri = ConfigureUri(requestUri, parameters, isSignedRequest);
-			return await _httpClient.PostAsync(uri, null).ConfigureAwait(false);
-		}
-
-		internal async Task<HttpResponseMessage> ExecutePutRequest(Uri requestUri, Dictionary<string, string> parameters, bool isSignedRequest = false)
-		{
-			var uri = ConfigureUri(requestUri, parameters, isSignedRequest);
-			return await _httpClient.PutAsync(uri, null).ConfigureAwait(false);
-		}
-
-		internal async Task<HttpResponseMessage> ExecuteDeleteRequest(Uri requestUri, Dictionary<string, string> parameters, bool isSignedRequest = false)
-		{
-			var uri = ConfigureUri(requestUri, parameters, isSignedRequest);
-			return await _httpClient.DeleteAsync(uri).ConfigureAwait(false);
+			var responseMessage = requestType switch
+			{
+				HttpRequestType.POST => await _httpClient.PostAsync(uri, null).ConfigureAwait(false),
+				HttpRequestType.GET => await _httpClient.GetAsync(uri).ConfigureAwait(false),
+				HttpRequestType.DELETE => await _httpClient.DeleteAsync(uri).ConfigureAwait(false),
+				HttpRequestType.PUT => await _httpClient.PutAsync(uri, null).ConfigureAwait(false),
+				_ => throw new ArgumentException("HttpRequestType is unknown")
+			};
+			
+			var responseResult = await HandleHttpResponse<T>(responseMessage, requestUri.ToString()).ConfigureAwait(false);
+			return responseResult;
 		}
 
 		#region Configure url
@@ -150,6 +144,48 @@ namespace BinanceApi.NetCore.FluentApi
 		private Uri ConfigureUri(Uri requestUri, Dictionary<string, string> parameters, bool isSignedRequest)
 		{
 			return isSignedRequest ? ConfigureSignedUri(requestUri, parameters) : requestUri;
+		}
+
+		#endregion
+
+		#region HandleHttpResponse
+
+		/// <summary>
+		/// Handle http response (generic)
+		/// </summary>
+		/// <typeparam name="T">Type</typeparam>
+		/// <param name="responseMessage">Response message from request to specific endpoint</param>
+		/// <param name="requestUrl">Endpoint</param>
+		/// <returns>Deserialized object from json response</returns>
+		private async Task<T> HandleHttpResponse<T>(HttpResponseMessage responseMessage, string requestUrl) where T : class
+		{
+			var messageJson = await responseMessage.Content.ReadAsStringAsync();
+			var statusCode = (int)responseMessage.StatusCode;
+
+			if (responseMessage.IsSuccessStatusCode)
+			{
+				if (typeof(T) == typeof(string))
+				{
+					return (T)(object)messageJson;
+				}
+				else
+				{
+					return messageJson.DeserializeJson<T>(requestUrl, statusCode);
+				}
+			}
+
+			var error = messageJson.DeserializeJson<BinanceError>(requestUrl, statusCode);
+
+			// Process binance exception
+			throw statusCode switch
+			{
+				(int)HttpStatusCode.GatewayTimeout => new BinanceTimeoutException(requestUrl, statusCode, error),
+				(int)HttpStatusCode.NotFound => new BinanceNotFoundException(requestUrl, statusCode, error),
+				(int)HttpStatusCode.Forbidden => new Binance403Exception(requestUrl, statusCode, error),
+				int code when code >= 400 && code <= 500 => new BinanceBadRequestException(requestUrl, statusCode, error),
+				int code when code > 500 => new BinanceServerException(requestUrl, statusCode, error),
+				_ => new BinanceException(requestUrl, statusCode, error)
+			};
 		}
 
 		#endregion
