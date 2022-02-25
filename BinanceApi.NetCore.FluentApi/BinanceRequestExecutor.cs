@@ -11,19 +11,16 @@ using Polly;
 
 using BinanceApi.NetCore.FluentApi.Exceptions;
 using BinanceApi.NetCore.FluentApi.Extentions;
+using BinanceApi.NetCore.FluentApi.Settings;
 
 namespace BinanceApi.NetCore.FluentApi
 {
 	public class BinanceRequestExecutor
 	{
-		#region Private fields
+		#region Private readonly fields
 
-		private string _secretKey;
-		private readonly long _timestampOffset = 1000;
-		private readonly long _receiveWindow = 5000;
-		private MemoryCache _memoryCache;
+		private readonly MemoryCache _memoryCache = new MemoryCache(new MemoryCacheOptions());
 		private readonly object _lockObject = new object();
-		private TimeSpan _defaultCacheTime = new TimeSpan(0, 30, 0);
 
 		#endregion
 
@@ -35,7 +32,7 @@ namespace BinanceApi.NetCore.FluentApi
 
 		public string ApiKey
 		{
-			get { return _apiKey; }
+			private get { return _apiKey; }
 			set
 			{
 				_apiKey = Guard.Against.NullOrEmpty(value, "api key", "Api key is null or empty");
@@ -56,25 +53,29 @@ namespace BinanceApi.NetCore.FluentApi
 
 		#endregion
 
-		public bool CacheEnabled { get; set; }
+		public string SecretKey { private get; set; }
 
-		public TimeSpan? CacheTime { get; set; }
-
-		public int LimitRequests { get; set; } = 10;
-
-		public int LimitSeconds { get; set; } = 10;
-
-		public bool RateLimitEnabled { get; set; } = true;
+		public BinanceClientSettings Settings { get; set; }
 
 		#region Ctor
 
 		public readonly HttpClient _httpClient;
 
-		public BinanceRequestExecutor(HttpClient httpClient)
+		public BinanceRequestExecutor(HttpClient httpClient, BinanceClientSettings settings)
 		{
 			_httpClient = httpClient;
-			_memoryCache = new MemoryCache(new MemoryCacheOptions());
+			Settings = settings;
 		}
+
+		//public BinanceRequestExecutor(
+		//	HttpClient httpClient,
+		//	BinanceClientSettings settings,
+		//	string apiKey,
+		//	string secretKey) : this(httpClient, settings)
+		//{
+		//	ApiKey = Guard.Against.NullOrEmpty(apiKey, nameof(apiKey), "Api key is null or empty");
+		//	SecretKey = Guard.Against.NullOrEmpty(secretKey, nameof(secretKey), "Secret key is null or empty");
+		//}
 
 		#endregion
 
@@ -100,7 +101,7 @@ namespace BinanceApi.NetCore.FluentApi
 
 			// CacheEnabled - all requests will use cach
 			// UseCache - use cache for specific requests (pass as parameter)
-			if (CacheEnabled || useCache)
+			if (Settings.CacheEnabled || useCache)
 			{
 				if (ContainsInMemoryCache(memoryCacheKey))
 				{
@@ -112,11 +113,11 @@ namespace BinanceApi.NetCore.FluentApi
 			}
 
 			var uri = ConfigureUri(requestUri, parameters, isSignedRequest);
-			var rateLimitPolicy = Policy.RateLimitAsync(LimitRequests, TimeSpan.FromSeconds(LimitSeconds));
+			var rateLimitPolicy = Policy.RateLimitAsync(Settings.LimitRequests, TimeSpan.FromSeconds(Settings.LimitSeconds));
 
 			// Apply retry policy for rate limit requests
-			var responseMessage = RateLimitEnabled ?
-				await rateLimitPolicy.ExecuteAsync(async () => await ExecuteRequest(requestType, uri)) : 
+			var responseMessage = Settings.RateLimitEnabled ?
+				await rateLimitPolicy.ExecuteAsync(async () => await ExecuteRequest(requestType, uri)) :
 				await ExecuteRequest(requestType, uri);
 
 			var responseResult = await
@@ -170,7 +171,7 @@ namespace BinanceApi.NetCore.FluentApi
 
 			// TODO: Возможность использовать серверное время
 			// и задавать timestampOffset через настройки
-			var timestamp = DateTimeOffset.UtcNow.AddMilliseconds(_timestampOffset).ToUnixTimeMilliseconds().ToString();
+			var timestamp = DateTimeOffset.UtcNow.AddMilliseconds(Settings.TimestampOffset).ToUnixTimeMilliseconds().ToString();
 
 			if (parameters == null)
 				parameters = new Dictionary<string, string>();
@@ -178,11 +179,11 @@ namespace BinanceApi.NetCore.FluentApi
 			if (!parameters.TryAdd("timestamp", timestamp))
 				throw new ArgumentException("Unable to add timestamp to params collection");
 
-			if (!parameters.TryAdd("recvWindow", _receiveWindow.ToString()))
+			if (!parameters.TryAdd("recvWindow", Settings.ReceiveWindow.ToString()))
 				throw new ArgumentException("Unable to add recvWindow to params collection");
 
 			var queryString = parameters.ToQueryString();
-			var signature = CreateHMACSignature(_secretKey, queryString);
+			var signature = CreateHMACSignature(SecretKey, queryString);
 			return new Uri($"{endpoint}?{queryString}&signature={signature}");
 		}
 
@@ -195,7 +196,9 @@ namespace BinanceApi.NetCore.FluentApi
 		/// <returns>Configured uri</returns>
 		private Uri ConfigureUri(Uri requestUri, Dictionary<string, string> parameters, bool isSignedRequest)
 		{
-			return isSignedRequest ? ConfigureSignedUri(requestUri, parameters) : requestUri;
+			return isSignedRequest ?
+				ConfigureSignedUri(requestUri, parameters) :
+				requestUri;
 		}
 
 		#endregion
@@ -222,7 +225,7 @@ namespace BinanceApi.NetCore.FluentApi
 
 				var memoryCacheKey = requestUrl.ToMemoryCacheKey<T>();
 				RemoveFromMemoryCache(memoryCacheKey);
-				AddInMemoryCache(messageObject, memoryCacheKey, CacheTime);
+				AddInMemoryCache(messageObject, memoryCacheKey, Settings.CacheTime);
 			}
 
 			var error = messageJson.DeserializeJson<BinanceError>(requestUrl, statusCode);
@@ -296,19 +299,16 @@ namespace BinanceApi.NetCore.FluentApi
 		/// <param name="iyem">The item to add</param>
 		/// <param name="key">The key to identify the cache item</param>
 		/// <param name="expiry">When the cache should expire</param>
-		public void AddInMemoryCache<T>(T item, string key, TimeSpan? expiry = null) where T : class
+		public void AddInMemoryCache<T>(T item, string key, TimeSpan expiry) where T : class
 		{
 			if (ContainsInMemoryCache(key)) return;
-
-			if (expiry == null)
-				expiry = _defaultCacheTime;
 
 			lock (_lockObject)
 			{
 				_memoryCache.Set(
 					key.ToLower(),
 					item,
-					new DateTimeOffset(DateTime.UtcNow.Add(expiry.Value)));
+					new DateTimeOffset(DateTime.UtcNow.Add(expiry)));
 			}
 		}
 

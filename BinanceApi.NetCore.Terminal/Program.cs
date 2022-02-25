@@ -21,12 +21,12 @@ namespace BinanceApi.NetCore.Terminal
 
 		private static void ConfigureServices(HostBuilderContext host, IServiceCollection services)
 		{
-			//services.AddBinanceClient(client =>
-			//{
-			//	client
-			//		.UseApiKeys("apiKey", "secretKey")
-			//		.AsSingleton();
-			//});
+			services.AddBinanceClient(client =>
+			{
+				client.ServerTimeEnabled = true;
+			});
+
+			//services.AddBinanceClient();
 
 			//services.AddBinanceClient(); // Все настройки по умолчанию, ключи будут установлены в процессе работы
 			//services.AddBinanceClient(client => // Установка настроек, использую BinanceClient
@@ -46,7 +46,6 @@ namespace BinanceApi.NetCore.Terminal
 			await host.StartAsync();
 
 			var client = host.Services.GetRequiredService<BinanceClient>();
-
 			client
 				.UsingSpotAccountTradeEndpoints()
 				.CreateNewOrder()

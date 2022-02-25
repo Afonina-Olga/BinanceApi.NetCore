@@ -9,6 +9,13 @@ namespace BinanceApi.NetCore.FluentApi.Endpoints
 	/// <see href="https://binance-docs.github.io/apidocs/spot/en/#spot-account-trade"/>
 	public class SpotAccountTradeEndpoints : IEndpoint
 	{
+		private readonly BinanceRequestExecutor _executor;
+
+		public SpotAccountTradeEndpoints(BinanceRequestExecutor executor)
+		{
+			_executor = executor;
+		}
+		
 		public string BaseUrl => "https://api.binance.com/api";
 
 		public string Version => "v3";
@@ -18,7 +25,7 @@ namespace BinanceApi.NetCore.FluentApi.Endpoints
 		/// Creates and validates a new order but does not send it into the matching engine.
 		/// </summary
 		/// <see href="https://binance-docs.github.io/apidocs/spot/en/#test-new-order-trade"/>
-		public INewOrderRequest CreateNewOrderTest() => new NewOrderRequest();
+		public INewOrderRequest CreateNewOrderTest() => new NewOrderRequestExecutor(_executor);
 
 		/// <summary>
 		/// Check an order's status.
@@ -30,10 +37,7 @@ namespace BinanceApi.NetCore.FluentApi.Endpoints
 		/// Send in a new order.
 		/// </summary>
 		/// <see href="https://binance-docs.github.io/apidocs/spot/en/#new-order-trade"/>
-		public INewOrderRequest CreateNewOrder() => new NewOrderRequest();
-
-		// Метод с параметрами?
-		//public IExecutable CreateNewOrder(string param1, int param2) => new NewOrderRequest();
+		public INewOrderRequest CreateNewOrder() => new NewOrderRequestExecutor(_executor);
 
 		/// <summary>
 		/// Cancel an active order.

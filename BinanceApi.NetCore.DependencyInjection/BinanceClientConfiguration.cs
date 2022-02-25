@@ -1,73 +1,104 @@
 ﻿using Ardalis.GuardClauses;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 
 namespace BinanceApi.NetCore.DependencyInjection
 {
-	public class BinanceClientConfiguration : IBinanceClientConfiguration
+	public class BinanceClientConfiguration
 	{
-		public string ApiKey { get; private set; }
+		#region ApiKey
 
-		public string SecretKey { get; private set; }
+		/// <summary>
+		/// Binance api key
+		/// </summary>
+		private string _apiKey;
+		public string ApiKey
+		{
+			private get { return _apiKey; }
+			set
+			{
+				_apiKey = Guard.Against.NullOrEmpty(value, nameof(ApiKey), "Api key is null or empty");
+			}
+		}
 
-		public ServiceLifetime Lifetime { get; private set; } = ServiceLifetime.Singleton;
+		#endregion
 
+		#region SecretKey
+
+		/// <summary>
+		/// Binance secret key
+		/// </summary>
+		private string _secretKey;
+		public string SecretKey
+		{
+			private get { return _secretKey; }
+			set
+			{
+				_secretKey = Guard.Against.NullOrEmpty(value, nameof(SecretKey), "Secret key is null or empty");
+			}
+		}
+
+		#endregion
+
+		#region ReceiveWindow
+
+		/// <summary>
+		/// Receive window for request (must be between 5000 and 60000)
+		/// </summary>
+		private int _ReceiveWindow = 5000;
+		public int ReceiveWindow
+		{
+			get { return _ReceiveWindow; }
+			set
+			{
+				_ReceiveWindow = Guard.Against.OutOfRange(
+					value,
+					nameof(ReceiveWindow),
+					5000,
+					60000,
+					"RecvWindow must be between 5000 and 60000");
+			}
+		}
+
+		#endregion
+
+		/// <summary>
+		/// Set httpMessageHandlerLifeTime for HttpClient
+		/// </summary>
 		public TimeSpan HttpMessageHandlerLifeTime { get; private set; } = TimeSpan.FromMinutes(5);
 
-		public int RetryAttempts { get; private set; } = 5;
+		/// <summary>
+		/// Use binance server time in requestst
+		/// </summary>
+		public bool ServerTimeEnabled { get; set; } = true;
 
-		public bool IsServerTime { get; set; } = true;
+		/// <summary>
+		/// Use memory cache for all requests
+		/// </summary>
+		public bool CacheEnabled { get; set; } = false;
 
-		public int DefaultReceiveWindow { get; set; } = 5000;
+		/// <summary>
+		/// Set memory cache time
+		/// </summary>
+		public TimeSpan CacheTime { get; set; } = new TimeSpan(0, 30, 0);
 
-		public bool UseBinanceServerTime { get; set; } = true;
+		/// <summary>
+		/// Number of requests for LimitSeconds (10 seconds for 10 requests etc)
+		/// </summary>
+		public int LimitRequests { get; set; } = 10;
 
-		public bool UseCache { get; set; } = false;
+		/// <summary>
+		/// Number of seconds the for LimitRequests (10 seconds for 10 requests etc)
+		/// </summary>
+		public int LimitSeconds { get; set; } = 10;
 
-		// Ограничение на количество запросов
-		public bool RequestsLimitEnabled { get; set; }
+		/// <summary>
+		/// Set rate limit policy mode
+		/// </summary>
+		public bool RateLimitEnabled { get; set; } = true;
 
-		public BinanceClientConfiguration AsSingleton()
-		{
-			Lifetime = ServiceLifetime.Singleton;
-			return this;
-		}
-
-		public BinanceClientConfiguration AsScoped()
-		{
-			Lifetime = ServiceLifetime.Scoped;
-			return this;
-		}
-
-		public BinanceClientConfiguration AsTransient()
-		{
-			Lifetime = ServiceLifetime.Transient;
-			return this;
-		}
-
-		public BinanceClientConfiguration UseApiKeys(string apiKey, string secretKey)
-		{
-			ApiKey = Guard.Against.NullOrEmpty(apiKey, nameof(apiKey), "Api key is null or empty");
-			SecretKey = Guard.Against.NullOrEmpty(secretKey, nameof(secretKey), "Secret key is null or empty");
-			return this;
-		}
-
-		public BinanceClientConfiguration UseServerTime(bool useServerTime)
-		{
-			IsServerTime = true;
-			return this;
-		}
-
-		public BinanceClientConfiguration SetHttpMessageHandlerLifeTime(TimeSpan time)
-		{
-			HttpMessageHandlerLifeTime = time;
-			return this;
-		}
-
-		public BinanceClientConfiguration SetRequestRetryAttempsCount(int retryAttempts)
-		{
-			RetryAttempts = retryAttempts;
-			return this;
-		}
+		/// <summary>
+		/// Set timestampOffset for request (add milliseconds to timestamp)
+		/// </summary>
+		public long TimestampOffset { get; set; } = 1000;
 	}
 }

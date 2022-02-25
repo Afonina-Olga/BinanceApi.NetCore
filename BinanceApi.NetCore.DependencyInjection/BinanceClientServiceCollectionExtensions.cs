@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using BinanceApi.NetCore.DependencyInjection;
 using BinanceApi.NetCore.FluentApi;
+using BinanceApi.NetCore.FluentApi.Settings;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -15,17 +16,21 @@ namespace Microsoft.Extensions.DependencyInjection
 	{
 		public static IServiceCollection AddBinanceClient(
 			this IServiceCollection services,
-			Action<IBinanceClientConfiguration> configuration)
+			Action<BinanceClientConfiguration> configuration)
 		{
 			Guard.Against.Null(services, nameof(services));
 			Guard.Against.Null(configuration, nameof(configuration));
 
 			var config = GetConfiguration(configuration);
 
+			// Add BinanceClient as Singleton
 			services.TryAdd(new ServiceDescriptor(
 				typeof(BinanceClient),
 				typeof(BinanceClient),
-				config.Lifetime));
+				ServiceLifetime.Singleton));
+
+			// Add BinanceClientSettings as Singleton
+			services.TryAddSingleton(new BinanceClientSettings());
 
 			services
 				.AddHttpClient<BinanceRequestExecutor>()
@@ -43,18 +48,55 @@ namespace Microsoft.Extensions.DependencyInjection
 						AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
 					};
 				})
-				.SetHandlerLifetime(TimeSpan.FromMinutes(5));
+				.SetHandlerLifetime(config.HttpMessageHandlerLifeTime);
 
 			return services;
 		}
 
+		/// <summary>
+		/// Use defaul configuration settings
+		/// </summary>
 		public static IServiceCollection AddBinanceClient(this IServiceCollection services)
+			=> AddDefaultBinanceClient(services);
+
+		public static IServiceCollection AddBinanceClient<TService>(this IServiceCollection services)
+			where TService : class
 		{
-			// TODO
-			return services;
+			services.TryAddSingleton<TService>();
+			return AddDefaultBinanceClient(services);
 		}
 
-		private static BinanceClientConfiguration GetConfiguration(Action<IBinanceClientConfiguration> configuration)
+		public static IServiceCollection AddBinanceClient<TService, TImplementation>(this IServiceCollection services)
+			where TService : class
+			where TImplementation : class, TService
+		{
+			services.TryAddSingleton<TService, TImplementation>();
+			return AddDefaultBinanceClient(services);
+		}
+
+		public static IServiceCollection AddBinanceClient<TService>(
+			this IServiceCollection services,
+			Action<BinanceClientConfiguration> configuration)
+			where TService : class
+		{
+			services.TryAddSingleton<TService>();
+			return services.AddBinanceClient(configuration);
+		}
+
+		public static IServiceCollection AddBinanceClient<TService, TImplementation>(
+			this IServiceCollection services,
+			Action<BinanceClientConfiguration> configuration)
+			where TService : class
+			where TImplementation : class, TService
+		{
+			services.TryAddSingleton<TService, TImplementation>();
+			return services.AddBinanceClient(configuration);
+		}
+
+		private static IServiceCollection AddDefaultBinanceClient(IServiceCollection services) =>
+			services.AddBinanceClient((configuration) => new BinanceClientConfiguration());
+
+		private static BinanceClientConfiguration GetConfiguration(Action<BinanceClientConfiguration> configuration)
 		{
 			var config = new BinanceClientConfiguration();
 			configuration?.Invoke(config);

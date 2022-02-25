@@ -4,13 +4,18 @@ using Ardalis.GuardClauses;
 using BinanceApi.NetCore.FluentApi.Builders;
 using BinanceApi.NetCore.Domain;
 using BinanceApi.NetCore.Domain.Response;
+using System.Net.Http;
 
 namespace BinanceApi.NetCore.FluentApi.Requests
 {
-	public class NewOrderRequest : INewOrderRequest, INewOrderMarketRequest, IExecutable<NewOrderResponseAsk>
+	public class NewOrderRequestExecutor :
+		INewOrderRequest,
+		INewOrderMarketRequest,
+		IExecutable<NewOrderResponseAsk>
 	{
 		#region Fields
 
+		private readonly BinanceRequestExecutor _executor;
 		private string _symbol;
 		private OrderSide? _orderSide;
 		private OrderType? _orderType;
@@ -21,6 +26,11 @@ namespace BinanceApi.NetCore.FluentApi.Requests
 		private decimal _quoteOrderQty;
 
 		#endregion
+
+		public NewOrderRequestExecutor(BinanceRequestExecutor executor)
+		{
+			_executor = executor;
+		}
 
 		public INewOrderRequest WithSimbol(string name)
 		{
