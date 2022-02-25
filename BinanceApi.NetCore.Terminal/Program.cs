@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using BinanceApi.NetCore.FluentApi.Endpoints;
 using BinanceApi.NetCore.FluentApi;
 
 namespace BinanceApi.NetCore.Terminal
@@ -39,13 +38,6 @@ namespace BinanceApi.NetCore.Terminal
 			//// настройки
 			//});
 
-			services
-				.AddHttpClient<BinanceRequestExecutor>()
-				.ConfigureHttpClient((serviceProvider, httpClient) =>
-				{
-					httpClient.BaseAddress = new Uri("https://api.binance.com");
-				});
-			//services.AddSingleton(<IBinanceClient, BinanceClient>();
 		}
 
 		public static async Task Main(string[] args)
@@ -66,12 +58,6 @@ namespace BinanceApi.NetCore.Terminal
 				.SetMarketOrderType()
 				.WithQuantity(20)
 				.ExecuteAsync(); // ExecuteAsync(NewOrderResponseType.FULL)
-
-			// AdditionalParameters только после ввода основных
-			//new BinanceClient()
-			//	.Using<Trade>()
-			//	.CreateNewOrder(1, 2, 3) // параметры вместо method chaining
-			//	.ExecuteAsync<NewOrderResponseFull>();
 
 			await host.StopAsync();
 

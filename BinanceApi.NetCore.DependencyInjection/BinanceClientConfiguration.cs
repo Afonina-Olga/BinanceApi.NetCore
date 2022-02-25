@@ -18,6 +18,15 @@ namespace BinanceApi.NetCore.DependencyInjection
 
 		public bool IsServerTime { get; set; } = true;
 
+		public int DefaultReceiveWindow { get; set; } = 5000;
+
+		public bool UseBinanceServerTime { get; set; } = true;
+
+		public bool UseCache { get; set; } = false;
+
+		// Ограничение на количество запросов
+		public bool RequestsLimitEnabled { get; set; }
+
 		public BinanceClientConfiguration AsSingleton()
 		{
 			Lifetime = ServiceLifetime.Singleton;

@@ -2,14 +2,12 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-
 using Polly;
 using Polly.Extensions.Http;
 using Ardalis.GuardClauses;
-
-using BinanceApi.NetCore;
-using BinanceApi.NetCore.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
+using BinanceApi.NetCore.DependencyInjection;
 using BinanceApi.NetCore.FluentApi;
 
 namespace Microsoft.Extensions.DependencyInjection
