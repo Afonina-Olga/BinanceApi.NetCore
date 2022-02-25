@@ -2,8 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Polly;
-using Polly.Extensions.Http;
+
 using Ardalis.GuardClauses;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -32,7 +31,6 @@ namespace Microsoft.Extensions.DependencyInjection
 				.AddHttpClient<BinanceRequestExecutor>()
 				.ConfigureHttpClient((serviceProvider, httpClient) =>
 				{
-					httpClient.BaseAddress = new Uri("https://api.binance.com");
 					httpClient
 						.DefaultRequestHeaders
 						.Accept
@@ -45,8 +43,7 @@ namespace Microsoft.Extensions.DependencyInjection
 						AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
 					};
 				})
-				.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-				.AddPolicyHandler(GetRetryPolicy(config.RetryAttempts));
+				.SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
 			return services;
 		}
@@ -55,17 +52,6 @@ namespace Microsoft.Extensions.DependencyInjection
 		{
 			// TODO
 			return services;
-		}
-
-		private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(int retryAttempts)
-		{
-			var jitter = new Random();
-			return
-				HttpPolicyExtensions
-					.HandleTransientHttpError()
-					.WaitAndRetryAsync(retryAttempts, retryAttempt =>
-						TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) +
-						TimeSpan.FromMilliseconds(jitter.Next(0, 1000)));
 		}
 
 		private static BinanceClientConfiguration GetConfiguration(Action<IBinanceClientConfiguration> configuration)

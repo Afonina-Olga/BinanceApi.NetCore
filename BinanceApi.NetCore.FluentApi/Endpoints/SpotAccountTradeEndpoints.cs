@@ -7,7 +7,7 @@ namespace BinanceApi.NetCore.FluentApi.Endpoints
 	/// Spot account / trade endpoints
 	/// </summary>
 	/// <see href="https://binance-docs.github.io/apidocs/spot/en/#spot-account-trade"/>
-	internal class Trade : IEndpoint
+	public class SpotAccountTradeEndpoints : IEndpoint
 	{
 		public string BaseUrl => "https://api.binance.com/api";
 

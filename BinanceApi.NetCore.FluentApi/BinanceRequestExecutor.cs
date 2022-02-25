@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.Extensions.Caching.Memory;
+using Polly;
 
 using BinanceApi.NetCore.FluentApi.Exceptions;
 using BinanceApi.NetCore.FluentApi.Extentions;
@@ -59,6 +60,12 @@ namespace BinanceApi.NetCore.FluentApi
 
 		public TimeSpan? CacheTime { get; set; }
 
+		public int LimitRequests { get; set; } = 10;
+
+		public int LimitSeconds { get; set; } = 10;
+
+		public bool RateLimitEnabled { get; set; } = true;
+
 		#region Ctor
 
 		public readonly HttpClient _httpClient;
@@ -105,8 +112,23 @@ namespace BinanceApi.NetCore.FluentApi
 			}
 
 			var uri = ConfigureUri(requestUri, parameters, isSignedRequest);
+			var rateLimitPolicy = Policy.RateLimitAsync(LimitRequests, TimeSpan.FromSeconds(LimitSeconds));
 
-			var responseMessage = requestType switch
+			// Apply retry policy for rate limit requests
+			var responseMessage = RateLimitEnabled ?
+				await rateLimitPolicy.ExecuteAsync(async () => await ExecuteRequest(requestType, uri)) : 
+				await ExecuteRequest(requestType, uri);
+
+			var responseResult = await
+					HandleHttpResponse<T>(responseMessage, requestUri.AbsoluteUri)
+					.ConfigureAwait(false);
+
+			return responseResult;
+		}
+
+		private async Task<HttpResponseMessage> ExecuteRequest(HttpRequestType requestType, Uri uri)
+		{
+			return requestType switch
 			{
 				HttpRequestType.POST => await _httpClient.PostAsync(uri, null).ConfigureAwait(false),
 				HttpRequestType.GET => await _httpClient.GetAsync(uri).ConfigureAwait(false),
@@ -114,12 +136,6 @@ namespace BinanceApi.NetCore.FluentApi
 				HttpRequestType.PUT => await _httpClient.PutAsync(uri, null).ConfigureAwait(false),
 				_ => throw new ArgumentException("HttpRequestType is unknown")
 			};
-
-			var responseResult = await
-				HandleHttpResponse<T>(responseMessage, requestUri.AbsoluteUri)
-				.ConfigureAwait(false);
-
-			return responseResult;
 		}
 
 		#endregion

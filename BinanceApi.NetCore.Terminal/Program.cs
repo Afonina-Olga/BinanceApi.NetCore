@@ -45,8 +45,10 @@ namespace BinanceApi.NetCore.Terminal
 			using var host = Hosting;
 			await host.StartAsync();
 
-			new BinanceClient()
-				.Endpoint<Trade>()
+			var client = host.Services.GetRequiredService<BinanceClient>();
+
+			client
+				.UsingSpotAccountTradeEndpoints()
 				.CreateNewOrder()
 				.WithSimbol("BTCUSDT")
 				.ForBuy()
@@ -63,6 +65,13 @@ namespace BinanceApi.NetCore.Terminal
 
 			Console.WriteLine("Завершено!");
 			Console.ReadLine();
+
+			//var p = Policy
+			//	.Handle<HttpRequestException>()
+			//	.Or<BinanceException>()
+			//	.WaitAndRetryAsync(retryAttempts, retryAttempt =>
+			//		TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) +
+			//		TimeSpan.FromMilliseconds(jitter.Next(0, 1000)));
 		}
 	}
 }
